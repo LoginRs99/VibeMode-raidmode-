@@ -19,6 +19,11 @@ namespace RaidMode
             OnlyReviver,
             Party
         }
+        public enum LanguageSetting
+        {
+            English,
+            Hungarian
+        }
         public struct SettingsData
         {
             public bool HideRoomName;
@@ -54,6 +59,7 @@ namespace RaidMode
         static ConfigEntry<bool> ShowNameplates;
         static ConfigEntry<bool> ShowNameplatesGlobally;
         static ConfigEntry<bool> DebugLogging;
+        static ConfigEntry<LanguageSetting> Language;
         static ConfigEntry<DifficultyModeSetting> DifficultyMode;
         static ConfigEntry<bool> HardMode;
         static ConfigEntry<int> ManualDifficultyScaling;
@@ -100,8 +106,11 @@ namespace RaidMode
             view.viewID = VIEW_ID;
             #region Base Section
             string section0 = "";
+            Language = config.Bind(section0, "Language", LanguageSetting.English,
+                "Client-local UI language for VibeMode notifications. This setting is not synced by the host.\nKliens oldali VibeMode nyelv az ertesitesekhez. Ezt a beallitast a host nem szinkronizalja.");
             HideRoomName = config.Bind(section0, "Hide Room Name", false,
-                "[Host-synced] Hides the online room name when entering a room and in the pause menu. Useful for streaming or recording. The host's value is synced to all clients.");
+                Text("[Host-synced] Hides the online room name when entering a room and in the pause menu. Useful for streaming or recording. The host's value is synced to all clients.",
+                     "[Host-szinkronizalt] Elrejti az online szoba nevet belepeskor es a szunet menuben. Hasznos streameleshez vagy felvetelhez. A host erteke szinkronizalodik a kliensekre."));
             HideRoomName.SettingChanged += SettingChanged;
             PlayerLimit = config.Bind(section0, "Party Limit", 5,
                 new ConfigDescription("[Host-only / host-synced] Maximum number of players allowed in the online room. Non-host changes are ignored while connected. All players should run the same VibeMode version.",
@@ -420,7 +429,33 @@ namespace RaidMode
         {
             if (PhotonNetwork.inRoom && !PhotonNetwork.isMasterClient)
             {
-                Debug.LogWarning("[VibeMode] Config change ignored on non-host client. Ask the host to change VibeMode settings; host settings are authoritative.");
+                Debug.LogWarning("[VibeMode] " + Text("Config change ignored on non-host client. Ask the host to change VibeMode settings; host settings are authoritative.",
+                                                      "A kliens oldali beallitasmodositast a mod figyelmen kivul hagyta. A VibeMode beallitasokat a hostnak kell modositani, mert a host beallitasai ervenyesek."));
+            }
+        }
+
+        internal static string Text (string english, string hungarian)
+        {
+            return Language != null && Language.Value == LanguageSetting.Hungarian ? hungarian : english;
+        }
+
+        private static string TranslateActionName (string actionName)
+        {
+            if (Language == null || Language.Value != LanguageSetting.Hungarian)
+            {
+                return actionName;
+            }
+
+            switch (actionName)
+            {
+                case "fast travel":
+                    return "gyorsutazni";
+                case "leave the area":
+                    return "teruletet valtani";
+                case "rest":
+                    return "pihenni";
+                default:
+                    return actionName;
             }
         }
 
@@ -472,9 +507,11 @@ namespace RaidMode
             string downedNames;
             if (TryGetDownedPartyMembers(out downedNames))
             {
-                return $"Can not {actionName} while these teammates are downed: {downedNames}";
+                return Text($"Can not {actionName} while these teammates are downed: {downedNames}",
+                            $"Nem lehet {TranslateActionName(actionName)}, amig ezek a csapattarsak eszmeletlenek: {downedNames}");
             }
-            return $"Can not {actionName} while there are downed teammates!";
+            return Text($"Can not {actionName} while there are downed teammates!",
+                        $"Nem lehet {TranslateActionName(actionName)}, amig van eszmeletlen csapattars!");
         }
 
         internal static void ShowNoManLeftBehindBlock (Character character, string actionName)

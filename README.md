@@ -20,6 +20,8 @@ BepInEx/plugins/
 
 For r2modman, install the mod into the active Outward Definitive Edition profile and make sure every player uses the same DLL build.
 
+VibeMode has a client-local `Language` option. English and Hungarian are currently supported for VibeMode's own in-game notifications.
+
 ## Host And Client Settings
 
 The host/master client is authoritative. In online co-op, the host's VibeMode settings are synced to all clients. Non-host config changes made while connected are ignored and will log a warning.
