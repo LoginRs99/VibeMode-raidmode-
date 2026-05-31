@@ -1,93 +1,247 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using HarmonyLib;
 using NodeCanvas.Framework;
 using NodeCanvas.Tasks.Actions;
+using UnityEngine;
 namespace RaidMode
 {
-    //Implements the reward sharing options.
+    // Implements the reward sharing options.
+    // STATUS: Fixed. See BUG 7 note below.
+    //
+    // NETWORKING NOTE (confirmed via IL analysis of Assembly-CSharp.dll):
+    // ReceiveItemReward and ReceiveSkillReward are self-routing.
+    // They call get_IsPhotonPlayerLocal internally. If the target character is remote,
+    // they automatically fire an RPC to that character's owning client via RPCManager.
+    // Calling these methods directly from the master client IS the correct approach.
+    // No double-rewarding, no save corruption risk.
+    //
+    // BUG 7 FIX: The original code had an early-exit when RewardReceiver == Everyone,
+    // skipping all sharing logic. But in Outward's original 2-player design, "Everyone"
+    // only means local split-screen players — remote network players (3, 4, 5...) are
+    // not "local" from the host's perspective and receive nothing from the base game's
+    // Everyone path. The fix: remove the early-exit and always run sharing logic,
+    // building the otherPlayers list regardless of receiver type.
     [HarmonyPatch(typeof(GiveReward), "OnExecute")]
     public class GiveReward_OnExecute
     {
         public static void Postfix (GiveReward __instance)
         {
-            if (__instance.RewardReceiver != GiveReward.Receiver.Everyone)
+            if (__instance == null)
+                return;
+            if (CharacterManager.Instance == null)
+                return;
+
+            string receiverUIDs = CollectReceiverUIDs(__instance);
+            string rewardPayload = BuildRewardPayload(__instance);
+
+            if (string.IsNullOrEmpty(rewardPayload))
             {
-                Character originalReciever = CharacterManager.Instance.GetWorldHostCharacter();
-                if (__instance.RewardReceiver == GiveReward.Receiver.Instigator)
+                RaidModeConfig.DebugLog("Reward sharing skipped because no shareable reward payload was found.");
+                return;
+            }
+
+            if (PhotonNetwork.inRoom && !PhotonNetwork.isMasterClient)
+            {
+                if (RaidModeConfig.Instance == null || RaidModeConfig.Instance.photonView == null)
+                    return;
+
+                RaidModeConfig.DebugLog($"Forwarding reward share request to master. receivers={receiverUIDs}, payload={rewardPayload}");
+                RaidModeConfig.Instance.photonView.RPC("ReceiveRewardShareRequest", PhotonTargets.MasterClient, receiverUIDs, rewardPayload);
+                return;
+            }
+
+            ShareRewardPayload(receiverUIDs, rewardPayload);
+        }
+
+        internal static void ShareRewardPayload (string receiverUIDs, string rewardPayload)
+        {
+            if (CharacterManager.Instance == null || string.IsNullOrEmpty(rewardPayload))
+                return;
+
+            HashSet<string> vanillaReceivers = ParseUIDs(receiverUIDs);
+            List<Character> otherPlayers = new List<Character>();
+            for (int i = 0; i < CharacterManager.Instance.PlayerCharacters.Count; i++)
+            {
+                Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[i]);
+                if (character && !vanillaReceivers.Contains(GetCharacterUID(character)))
                 {
-                    if (__instance.blackboard != null)
-                    {
-                        Variable<Character> instigator = __instance.blackboard.GetVariable<Character>("gInstigator");
-                        if (instigator != null)
-                        {
-                            originalReciever = instigator.value;
-                        }
-                    }
+                    otherPlayers.Add(character);
+                }
+            }
+
+            if (otherPlayers.Count == 0)
+            {
+                RaidModeConfig.DebugLog($"Reward sharing skipped. vanillaReceivers={receiverUIDs}, otherPlayers=0");
+                return;
+            }
+
+            RaidModeConfig.DebugLog($"Reward sharing started. vanillaReceivers={receiverUIDs}, otherPlayers={otherPlayers.Count}, payload={rewardPayload}");
+            string[] rewards = rewardPayload.Split('|');
+            for (int i = 0; i < rewards.Length; i++)
+            {
+                RewardShareData rewardData;
+                if (!TryParseRewardShareData(rewards[i], out rewardData))
+                {
+                    RaidModeConfig.DebugWarning($"Reward item skipped because payload entry was invalid. entry={rewards[i]}");
+                    continue;
                 }
 
-                //Get all other players.
-                List<Character> otherPlayers = new List<Character>();
-                for (int i = 0; i < CharacterManager.Instance.PlayerCharacters.Count; i++)
+                int itemID = rewardData.ItemID;
+                if (rewardDatabase.TryGetValue(itemID, out RewardType rewardType))
                 {
-                    Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[i]);
-                    if (character && character != originalReciever)
+                    switch (rewardType)
                     {
-                        otherPlayers.Add(character);
+                        case RewardType.SideQuestArtifact:
+                            if (!RaidModeConfig.LiveSettings.ShareSideQuestArtifacts)
+                                continue;
+                            break;
+                        case RewardType.SideQuestSkill:
+                            if (!RaidModeConfig.LiveSettings.ShareSideQuestSkills)
+                                continue;
+                            break;
+                        case RewardType.StoryArtifact:
+                            if (!RaidModeConfig.LiveSettings.ShareStoryArtifacts)
+                                continue;
+                            break;
+                        case RewardType.StorySkill:
+                            if (!RaidModeConfig.LiveSettings.ShareStorySkills)
+                                continue;
+                            break;
+                        case RewardType.WorldArtifact:
+                            if (!RaidModeConfig.LiveSettings.ShareWorldArtifacts)
+                                continue;
+                            break;
                     }
                 }
-
-                //Share item rewards
-                foreach (NodeCanvas.Tasks.Actions.ItemQuantity reward in __instance.ItemReward)
+                else
                 {
-                    if (rewardDatabase.TryGetValue(reward.Item.value.ItemID, out RewardType rewardType))
+                    // Item not in the sharing database — not shared.
+                    WarnUnregisteredRewardItem(itemID);
+                    continue;
+                }
+
+                // Deliver reward to each other player.
+                // ReceiveItemReward/ReceiveSkillReward internally check IsPhotonPlayerLocal
+                // and automatically RPC to the correct owning client if remote.
+                foreach (Character player in otherPlayers)
+                {
+                    if (rewardData.IsSkill)
                     {
-                        switch (rewardType)
-                        {
-                            case RewardType.SideQuestArtifact:
-                                if (!RaidModeConfig.LiveSettings.ShareSideQuestArtifacts)
-                                    continue;
-                                break;
-                            case RewardType.SideQuestSkill:
-                                if (!RaidModeConfig.LiveSettings.ShareSideQuestSkills)
-                                    continue;
-                                break;
-                            case RewardType.StoryArtifact:
-                                if (!RaidModeConfig.LiveSettings.ShareStoryArtifacts)
-                                    continue;
-                                break;
-                            case RewardType.StorySkill:
-                                if (!RaidModeConfig.LiveSettings.ShareStorySkills)
-                                    continue;
-                                break;
-                            case RewardType.WorldArtifact:
-                                if (!RaidModeConfig.LiveSettings.ShareWorldArtifacts)
-                                    continue;
-                                break;
-                        }
+                        RaidModeConfig.DebugLog($"Sharing skill reward. itemID={itemID}, type={rewardType}, target={player.Name}");
+                        player.Inventory.ReceiveSkillReward(itemID);
                     }
                     else
                     {
-                        //Not being shared.
-                        continue;
-                    }
-
-                    //Share among players.
-                    foreach (Character player in otherPlayers)
-                    {
-                        int quantity = reward.Quantity != null ? reward.Quantity.value : 1;
-                        bool tryToEquip = reward.TryToEquip != null && reward.TryToEquip.value;
-                        if (reward.Item.value.RefItem is Skill)
-                        {
-                            player.Inventory.ReceiveSkillReward(reward.Item.value.ItemID);
-                        }
-                        else
-                        {
-                            player.Inventory.ReceiveItemReward(reward.Item.value.ItemID, quantity, tryToEquip);
-                        }
+                        RaidModeConfig.DebugLog($"Sharing item reward. itemID={itemID}, type={rewardType}, quantity={rewardData.Quantity}, target={player.Name}");
+                        player.Inventory.ReceiveItemReward(itemID, rewardData.Quantity, rewardData.TryToEquip);
                     }
                 }
             }
         }
+
+        private static string BuildRewardPayload (GiveReward rewardTask)
+        {
+            List<string> entries = new List<string>();
+
+            foreach (NodeCanvas.Tasks.Actions.ItemQuantity reward in rewardTask.ItemReward)
+            {
+                if (reward == null || reward.Item == null || reward.Item.value == null)
+                {
+                    RaidModeConfig.DebugWarning("Reward item skipped because GiveReward contained a null item entry.");
+                    continue;
+                }
+
+                var rewardItem = reward.Item.value;
+                int quantity = reward.Quantity != null ? reward.Quantity.value : 1;
+                int equip = reward.TryToEquip != null && reward.TryToEquip.value ? 1 : 0;
+                int skill = rewardItem.RefItem is Skill ? 1 : 0;
+                entries.Add($"{rewardItem.ItemID},{quantity},{equip},{skill}");
+            }
+
+            return string.Join("|", entries.ToArray());
+        }
+
+        private static bool TryParseRewardShareData (string entry, out RewardShareData data)
+        {
+            data = new RewardShareData();
+            if (string.IsNullOrEmpty(entry))
+                return false;
+
+            string[] parts = entry.Split(',');
+            if (parts.Length != 4)
+                return false;
+
+            int itemID;
+            int quantity;
+            int tryToEquip;
+            int isSkill;
+            if (!int.TryParse(parts[0], out itemID)
+                || !int.TryParse(parts[1], out quantity)
+                || !int.TryParse(parts[2], out tryToEquip)
+                || !int.TryParse(parts[3], out isSkill))
+                return false;
+
+            data.ItemID = itemID;
+            data.Quantity = quantity;
+            data.TryToEquip = tryToEquip != 0;
+            data.IsSkill = isSkill != 0;
+            return true;
+        }
+
+        private static string CollectReceiverUIDs (GiveReward rewardTask)
+        {
+            if (rewardTask.receivers == null || rewardTask.receivers.Count == 0)
+                return string.Empty;
+
+            List<string> receiverUIDs = new List<string>();
+            foreach (Character receiver in rewardTask.receivers)
+            {
+                string uid = GetCharacterUID(receiver);
+                if (!string.IsNullOrEmpty(uid))
+                    receiverUIDs.Add(uid);
+            }
+            return string.Join(";", receiverUIDs.ToArray());
+        }
+
+        private static HashSet<string> ParseUIDs (string receiverUIDs)
+        {
+            HashSet<string> parsed = new HashSet<string>();
+            if (string.IsNullOrEmpty(receiverUIDs))
+                return parsed;
+
+            string[] split = receiverUIDs.Split(';');
+            for (int i = 0; i < split.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(split[i]))
+                    parsed.Add(split[i]);
+            }
+            return parsed;
+        }
+
+        private static string GetCharacterUID (Character character)
+        {
+            if (!character || character.UID == null)
+                return string.Empty;
+            return character.UID.Value;
+        }
+
+        private static void WarnUnregisteredRewardItem (int itemID)
+        {
+            if (!AnyRewardSharingEnabled() || !s_unregisteredRewardWarnings.Add(itemID))
+                return;
+
+            Debug.LogWarning($"[VibeMode] Reward item {itemID} is not in the VibeMode sharing database, so it was not shared. If this is a unique quest/DLC reward, add it to GiveReward.rewardDatabase.");
+        }
+
+        private static bool AnyRewardSharingEnabled ()
+        {
+            return RaidModeConfig.LiveSettings.ShareSideQuestArtifacts
+                   || RaidModeConfig.LiveSettings.ShareSideQuestSkills
+                   || RaidModeConfig.LiveSettings.ShareStoryArtifacts
+                   || RaidModeConfig.LiveSettings.ShareStorySkills
+                   || RaidModeConfig.LiveSettings.ShareWorldArtifacts;
+        }
+
         enum RewardType
         {
             SideQuestArtifact,
@@ -96,6 +250,15 @@ namespace RaidMode
             StorySkill,
             WorldArtifact
         }
+
+        private struct RewardShareData
+        {
+            public int ItemID;
+            public int Quantity;
+            public bool TryToEquip;
+            public bool IsSkill;
+        }
+
         static Dictionary<int, RewardType> rewardDatabase = new Dictionary<int, RewardType>
         {
             //Unique items awarded by side-quests.
@@ -211,5 +374,6 @@ namespace RaidMode
             [5300050] = RewardType.WorldArtifact, //Glowstone Backpack
             [5100510] = RewardType.WorldArtifact, //Light Mender's Lexicon
         };
+        private static readonly HashSet<int> s_unregisteredRewardWarnings = new HashSet<int>();
     }
 }

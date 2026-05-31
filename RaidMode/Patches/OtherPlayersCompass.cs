@@ -7,6 +7,9 @@ namespace RaidMode
     {
         public static bool Prefix (OtherPlayersCompass __instance)
         {
+            if (__instance == null || __instance.m_watchedElements == null)
+                return true;
+
             for (int i = 0; i < __instance.m_watchedElements.Length; i++)
             {
                 __instance.m_watchedElements[i] = null;

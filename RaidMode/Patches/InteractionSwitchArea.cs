@@ -10,17 +10,12 @@ namespace RaidMode
             if (RaidModeConfig.LiveSettings.ReviveNoManLeftBehind)
             {
                 //Block area switching if a player is dead.
-                foreach (PlayerSystem player in Global.Lobby.PlayersInLobby)
+                string downedNames;
+                if (RaidModeConfig.TryGetDownedPartyMembers(out downedNames))
                 {
-                    if (player.ControlledCharacter && player.ControlledCharacter.IsDead)
-                    {
-                        if (__instance.LastCharacter.IsLocalPlayer)
-                        {
-                            __instance.LastCharacter.CharacterUI.ShowInfoNotification("Can not leave area while there are downed teammates!");
-                        }
-                        __instance.InterruptActivation();
-                        return false;
-                    }
+                    RaidModeConfig.ShowNoManLeftBehindBlock(__instance.LastCharacter, "leave the area");
+                    __instance.InterruptActivation();
+                    return false;
                 }
             }
             return true;

@@ -12,10 +12,16 @@ namespace RaidMode
         {
             if (__instance.m_sldOtherPlayerCursorTemplate)
             {
-                for (int i = 0; i < __instance.m_sldOtherPlayerCursors.Length; i++)
+                if (__instance.m_sldOtherPlayerCursors != null)
                 {
-                    GameObject.Destroy(__instance.m_sldOtherPlayerCursors[i].gameObject);
-                    __instance.m_sldOtherPlayerCursors[i] = null;
+                    for (int i = 0; i < __instance.m_sldOtherPlayerCursors.Length; i++)
+                    {
+                        if (__instance.m_sldOtherPlayerCursors[i] != null)
+                        {
+                            GameObject.Destroy(__instance.m_sldOtherPlayerCursors[i].gameObject);
+                        }
+                        __instance.m_sldOtherPlayerCursors[i] = null;
+                    }
                 }
                 __instance.m_sldOtherPlayerCursors = new Slider[19];
                 __instance.m_sldOtherPlayerCursorTemplate.gameObject.SetActive(true);

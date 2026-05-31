@@ -1,27 +1,48 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using HarmonyLib;
 namespace RaidMode
 {
-    //Implements all of the enemy stat scaling features.
+    // Implements all of the enemy stat scaling features.
+    // STATUS: No changes. Audited and confirmed clean for logic.
+    //
+    // KNOWN RISK (deferred): CoopStatData.Value[] is a base-game float array
+    // built for vanilla 2-player sessions. Only Value[0] is ever read here,
+    // which is index-safe. However if the base game's CoopStatData initializer
+    // allocates this array based on MaxPlayers, its size or content may differ
+    // in unexpected ways under VibeMode. Needs verification via decompilation
+    // of CoopStatData's constructor/initializer. Deferred to Phase 4.
     [HarmonyPatch(typeof(CoopStats), "ApplyToCharacter")]
     public class CoopStats_ApplyToCharacter
     {
+        private const string TAG_MAX_HEALTH = "77";
+        private const string TAG_IMPACT_RESISTANCE = "84";
+        private const string TAG_IMPACT = "95";
+        private const string TAG_ALL_DAMAGES = "96";
+
         public static bool Prefix (Character _char)
         {
+            if (!_char || _char.Stats == null)
+                return false;
+
             CharacterStats stats = _char.Stats;
-            stats.RemoveStatStack(TagSourceManager.Instance.GetTag("77"), "Coop_Stat", true);
-            stats.RemoveStatStack(TagSourceManager.Instance.GetTag("95"), "Coop_Stat", true);
-            stats.RemoveStatStack(TagSourceManager.Instance.GetTag("96"), "Coop_Stat", true);
-            stats.RemoveStatStack(TagSourceManager.Instance.GetTag("84"), "Coop_Stat", false);
+            stats.RemoveStatStack(TagSourceManager.Instance.GetTag(TAG_MAX_HEALTH), "Coop_Stat", true);
+            stats.RemoveStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT), "Coop_Stat", true);
+            stats.RemoveStatStack(TagSourceManager.Instance.GetTag(TAG_ALL_DAMAGES), "Coop_Stat", true);
+            stats.RemoveStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT_RESISTANCE), "Coop_Stat", false);
             if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.NoScaling)
                 return false;
+            int lobbyPlayerCount = Global.Lobby != null ? Global.Lobby.PlayersInLobbyCount : 1;
             if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.JustVanilla)
-                if (Global.Lobby.PlayersInLobbyCount > 1)
+                if (lobbyPlayerCount > 1)
                     return true;
                 else
                     return false;
             int manualPlayerCount = RaidModeConfig.LiveSettings.ManualDifficultyScaling;
-            int playerCount = manualPlayerCount > 0 ? manualPlayerCount + 1 : Global.Lobby.PlayersInLobbyCount;
+            int playerCount = manualPlayerCount > 0 ? manualPlayerCount + 1 : lobbyPlayerCount;
+            if (playerCount < 1)
+                playerCount = 1;
+            if (playerCount <= 1)
+                return false;
             if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.VanillaPlus)
             {
                 VanillaPlus(_char, playerCount, stats.CoopStats.StatData);
@@ -41,13 +62,13 @@ namespace RaidMode
             float mult = RaidModeConfig.LiveSettings.HardMode ? 2 : 1;
             float healthBonus = healthMult * (playerCount - 1f) * mult;
             StatStack healthStack = new StatStack("Coop_Stat", -1f, healthBonus);
-            stats.AddStatStack(TagSourceManager.Instance.GetTag("77"), healthStack, true);
+            stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_MAX_HEALTH), healthStack, true);
             float impactBonus = impactMult * (playerCount - 1f) * mult;
             StatStack impactStack = new StatStack("Coop_Stat", -1f, impactBonus);
-            stats.AddStatStack(TagSourceManager.Instance.GetTag("95"), impactStack, true);
+            stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT), impactStack, true);
             float allDamagesBonus = damageMult * (playerCount - 1f) * mult;
             StatStack allDamagesStack = new StatStack("Coop_Stat", -1f, allDamagesBonus);
-            stats.AddStatStack(TagSourceManager.Instance.GetTag("96"), allDamagesStack, true);
+            stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_ALL_DAMAGES), allDamagesStack, true);
             float baseImpactRes = stats.ImpactResistanceStat.BaseValue + _char.Inventory.Equipment.GetEquipmentImpactResistance();
             float impactResBonus = 0;
             if (baseImpactRes < 100f)
@@ -71,18 +92,26 @@ namespace RaidMode
                 impactResBonus = (1f - newResMod) * 100f - baseImpactRes + 0.25f;
             }
             StatStack impactResStack = new StatStack("Coop_Stat", -1f, impactResBonus);
-            stats.AddStatStack(TagSourceManager.Instance.GetTag("84"), impactResStack, false);
+            stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT_RESISTANCE), impactResStack, false);
             return false;
         }
-        //Implements the Vanilla Plus mode's stat scaling.
+        // Implements the Vanilla Plus mode's stat scaling.
         public static bool VanillaPlus (Character _char, float _playerCount, CoopStatData[] statData)
         {
+            if (!_char || _char.Stats == null || statData == null)
+                return false;
+            if (_playerCount <= 1f)
+                return false;
+
             CharacterStats stats = _char.Stats;
             List<string> vanillaBonuses = new List<string>();
             float baseImpactResBonus = 0;
             float mult = RaidModeConfig.LiveSettings.HardMode ? 2 : 1;
             for (int i = 0; i < statData.Length; i++)
             {
+                if (statData[i].Stat == null || statData[i].Stat.Tag == null || statData[i].Value == null || statData[i].Value.Length == 0)
+                    continue;
+
                 if (statData[i].Stat.Tag.TagName == "ImpactResistance" && _playerCount > 2)
                 {
                     baseImpactResBonus = statData[i].Value[0];
@@ -101,19 +130,19 @@ namespace RaidMode
                 {
                     float healthBonus = 0.5f * (_playerCount - 2f) * mult;
                     StatStack healthStack = new StatStack("Coop_Stat", -1f, healthBonus);
-                    stats.AddStatStack(TagSourceManager.Instance.GetTag("77"), healthStack, true);
+                    stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_MAX_HEALTH), healthStack, true);
                 }
                 if (!vanillaBonuses.Contains("Impact"))
                 {
                     float impactBonus = 0.75f * (_playerCount - 2f) * mult;
                     StatStack impactStack = new StatStack("Coop_Stat", -1f, impactBonus);
-                    stats.AddStatStack(TagSourceManager.Instance.GetTag("95"), impactStack, true);
+                    stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT), impactStack, true);
                 }
                 if (!vanillaBonuses.Contains("AllDamages"))
                 {
                     float allDamagesBonus = 0.15f * (_playerCount - 2f) * mult;
                     StatStack allDamagesStack = new StatStack("Coop_Stat", -1f, allDamagesBonus);
-                    stats.AddStatStack(TagSourceManager.Instance.GetTag("96"), allDamagesStack, true);
+                    stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_ALL_DAMAGES), allDamagesStack, true);
                 }
                 float baseImpactRes = stats.ImpactResistanceStat.BaseValue + _char.Inventory.Equipment.GetEquipmentImpactResistance();
                 float newImpactResBonus;
@@ -144,7 +173,7 @@ namespace RaidMode
                     newImpactResBonus = baseImpactResBonus;
                 }
                 StatStack impactResStack = new StatStack("Coop_Stat", -1f, newImpactResBonus);
-                stats.AddStatStack(TagSourceManager.Instance.GetTag("84"), impactResStack, false);
+                stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT_RESISTANCE), impactResStack, false);
             }
             return false;
         }

@@ -1,0 +1,10 @@
+.vs/
+__pycache__/
+RaidMode/bin/
+RaidMode/obj/
+*.user
+*.suo
+*.cache
+*.log
+extract_raidmode.py
+raidmode_analysis.txt

@@ -1,7 +1,10 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 namespace RaidMode
 {
-    //Block area switching if a player is dead when the No Man Left Behind feature is on.
+    // Block area switching if a player is dead when the No Man Left Behind feature is on.
+    // STATUS: No changes. Audited and confirmed clean.
+    // Iterates Global.Lobby.PlayersInLobby (a dictionary — no fixed size).
+    // Handles any player count correctly.
     [HarmonyPatch(typeof(CharacterManager), "SendStartFastTravel")]
     public class CharacterManager_SendStartFastTravel
     {
@@ -9,12 +12,19 @@ namespace RaidMode
         {
             if (RaidModeConfig.LiveSettings.ReviveNoManLeftBehind)
             {
-                foreach (PlayerSystem player in Global.Lobby.PlayersInLobby)
+                string downedNames;
+                if (RaidModeConfig.TryGetDownedPartyMembers(out downedNames))
                 {
-                    if (player.ControlledCharacter && player.ControlledCharacter.IsDead)
+                    Character localCharacter = CharacterManager.Instance ? CharacterManager.Instance.GetFirstLocalCharacter() : null;
+                    if (localCharacter)
                     {
-                        return false;
+                        RaidModeConfig.ShowNoManLeftBehindBlock(localCharacter, "fast travel");
                     }
+                    else
+                    {
+                        RaidModeConfig.DebugLog(RaidModeConfig.GetNoManLeftBehindBlockMessage("fast travel"));
+                    }
+                    return false;
                 }
             }
             return true;

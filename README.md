@@ -1,44 +1,45 @@
-# Raid Mode Fork
+# VibeMode
 
-This project is a fork/modification of the Outward mod **Raid Mode** originally created by SpicerXD.
+VibeMode is an Outward Definitive Edition co-op mod forked from Raid Mode by SpicerXD. It raises the online party limit and adds fixes/options for larger co-op groups.
 
-Original mod:
-[Raid Mode on Nexus Mods](https://www.nexusmods.com/outward/mods/183?tab=description&utm_source=chatgpt.com)
+## Requirements
 
-## Credits
+- Outward Definitive Edition.
+- BepInEx 5 for Outward / r2modman BepInEx profile support.
+- The same VibeMode version installed for every player in the session.
 
-Full credit for the original mod goes to:
-- SpicerXD
+VibeMode uses Harmony, Photon/PUN 1, Unity, NodeCanvas, and Outward game assemblies that are already provided by BepInEx and the game. SideLoader is not required by VibeMode itself, but it is fine to use if other mods in the profile need it.
 
-## About Raid Mode
+## Install
 
-Raid Mode expands the multiplayer experience in Outward by:
-- increasing the player limit,
-- improving co-op stability,
-- adding multiplayer quality-of-life features,
-- providing configurable difficulty scaling and gameplay settings. :contentReference[oaicite:1]{index=1}
+Place `VibeMode.dll` in:
 
-## This Fork
+```text
+BepInEx/plugins/
+```
 
-This repository contains my personal fork/modification of Raid Mode.
+For r2modman, install the mod into the active Outward Definitive Edition profile and make sure every player uses the same DLL build.
 
-Changes may include:
-- bug fixes,
-- compatibility updates,
-- custom gameplay tweaks,
-- experimental features,
-- or personal improvements.
+## Host And Client Settings
 
-## Disclaimer
+The host/master client is authoritative. In online co-op, the host's VibeMode settings are synced to all clients. Non-host config changes made while connected are ignored and will log a warning.
 
-This project is unofficial and is not affiliated with the original author.
+Client-specific visual preferences are currently not separate. Nameplates, debug logging, travel readiness messages, and gameplay settings are all synced from the host.
 
-Please support the original mod and creator here:
-[Original Nexus Mods Page](https://www.nexusmods.com/outward/mods/183?tab=description&utm_source=chatgpt.com)
+## Important Options
 
-## Installation
+- `Party Limit`: Host-only. Sets the maximum online room size.
+- `Difficulty Mode`: Host-synced. Chooses enemy scaling mode.
+- `Hard Mode`: Host-synced. Doubles supported scaling bonuses.
+- `Manual Difficulty Scaling`: Host-synced. Overrides automatic party-size scaling.
+- `Revival Health Burn` / `Revival Stamina Burn`: Host-synced. Controls revive penalties.
+- `Stability Rework`: Host-synced. Reduces enemy stagger-locking in larger groups.
+- `No Man Left Behind`: Host-synced. Blocks travel/rest while teammates are downed.
+- `Show Travel Readiness Messages`: Host-synced UI. Shows who is blocking travel/rest.
+- `Cozy Beds`: Host-synced. Lets two players share supported house/inn beds.
+- Reward sharing options: Host-synced. Controls whether selected quest/story/world rewards are shared.
+- `Debug Logging`: Host-synced diagnostics. Enable only when collecting logs.
 
-1. Install BepInEx for Outward.
-2. Place the compiled `.dll` into:
-   ```txt
-   Outward/BepInEx/plugins
+## Testing Notes
+
+Use the same VibeMode build on all machines. For first tests, use copied saves or test characters, then check the BepInEx log for VibeMode warnings after joining, area transitions, rest, death/revive, rewards, and late-join attempts.

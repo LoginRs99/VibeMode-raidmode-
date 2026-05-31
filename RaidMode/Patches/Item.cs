@@ -7,7 +7,10 @@ namespace RaidMode
     {
         public static bool Prefix (Item __instance)
         {
-            __instance.m_updateSpeed = 0f;
+            if (VibeModeNetwork.HasRemotePeers)
+            {
+                __instance.m_updateSpeed = 0f;
+            }
             return true;
         }
     }

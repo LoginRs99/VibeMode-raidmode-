@@ -8,16 +8,21 @@ namespace RaidMode
     {
         public static bool Prefix()
         {
-            if (RaidModeConfig.LiveSettings.ShareBlacksmithRepairs)
+            if (!RaidModeConfig.LiveSettings.ShareBlacksmithRepairs)
+                return true;
+            if (CharacterManager.Instance == null)
+                return true;
+            if (PhotonNetwork.inRoom && !PhotonNetwork.isMasterClient)
+                return true;
+
+            for (int i = 0; i < CharacterManager.Instance.PlayerCharacters.Count; i++)
             {
-                for (int i = 0; i < CharacterManager.Instance.PlayerCharacters.Count; i++)
-                {
-                    Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[i]);
-                    if (character && character.Inventory)
-                        character.Inventory.RepairEverything();
-                }
+                Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[i]);
+                if (character && character.Inventory)
+                    character.Inventory.RepairEverything();
             }
-            return true;
+
+            return false;
         }
     }
 }

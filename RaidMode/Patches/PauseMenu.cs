@@ -16,12 +16,11 @@ namespace RaidMode
                 __instance.UpdateShowHide();
             if ((bool)__instance.LocalCharacter)
             {
-                if (__instance.LocalCharacter.Alive && __instance.m_btnSplit.interactable != PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient)
-                    __instance.m_btnSplit.interactable = PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient;
-                else if (!__instance.LocalCharacter.Alive && __instance.m_btnSplit.interactable)
-                {
-                    __instance.m_btnSplit.interactable = false;
-                }
+                bool canUseSplitButton = __instance.LocalCharacter.Alive
+                                         && (PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient);
+                if (__instance.m_btnSplit.interactable != canUseSplitButton)
+                    __instance.m_btnSplit.interactable = canUseSplitButton;
+
                 if (!__instance.m_suicide && ((Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.U)) || ControlsInput.GamepadUnstuckCheat(__instance.PlayerID)))
                 {
                     __instance.m_suicide = true;
@@ -41,7 +40,9 @@ namespace RaidMode
     {
         public static void Postfix (PauseMenu __instance)
         {
-            __instance.m_btnSplit.interactable = PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient;
+            __instance.m_btnSplit.interactable = __instance.LocalCharacter
+                                                 && __instance.LocalCharacter.Alive
+                                                 && (PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient);
             __instance.m_btnToggleNetwork.interactable = StoreManager.Instance.AllowOnlineFeatures && !ConnectPhotonMaster.Instance.RequestingRooms;
         }
     }

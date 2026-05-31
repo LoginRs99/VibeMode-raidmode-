@@ -18,16 +18,18 @@ namespace RaidMode
             questEventData.ResetTime();
             questEventData.SetStack(_stackAmount);
             __instance.NotifyOnQEAddedListeners(questEventData);
-            if (_sendEvent)
+            if (_sendEvent && VibeModeNetwork.HasRemotePeers)
             {
                 if (!PhotonNetwork.isNonMasterClientInRoom)
                 {
                     //PhotonTargets.Others magic sauce
+                    RaidModeConfig.DebugLog($"Quest SetStack sync from master. event={_eventUID}, stack={_stackAmount}");
                     __instance.photonView.RPC("SendSyncQuestEventAdd", PhotonTargets.Others, _eventUID, questEventData.ToNetworkData());
                 }
                 else
                 {
                     //PhotonTargets.Others magic sauce
+                    RaidModeConfig.DebugLog($"Quest SetStack sync from client. event={_eventUID}, stack={_stackAmount}, localPlayer={PhotonNetwork.player.ID}");
                     __instance.photonView.RPC("SendSetQuestEventStack", PhotonTargets.Others, _eventUID, _stackAmount);
                 }
             }
@@ -68,16 +70,18 @@ namespace RaidMode
             }
             questEventData.UpdateTime();
             __instance.NotifyOnQEAddedListeners(questEventData);
-            if (_sendEvent)
+            if (_sendEvent && VibeModeNetwork.HasRemotePeers)
             {
                 if (!PhotonNetwork.isNonMasterClientInRoom)
                 {
                     //PhotonTargets.Others magic sauce
+                    RaidModeConfig.DebugLog($"Quest AddEvent sync from master. event={_eventUID}, stack={_stackAmount}");
                     __instance.photonView.RPC("SendSyncQuestEventAdd", PhotonTargets.Others, _eventUID, questEventData.ToNetworkData());
                 }
                 else
                 {
                     //PhotonTargets.Others magic sauce
+                    RaidModeConfig.DebugLog($"Quest AddEvent sync from client. event={_eventUID}, stack={_stackAmount}, localPlayer={PhotonNetwork.player.ID}");
                     __instance.photonView.RPC("SendAddQuestEvent", PhotonTargets.Others, _eventUID, _stackAmount);
                 }
             }

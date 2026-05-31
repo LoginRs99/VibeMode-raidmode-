@@ -12,10 +12,11 @@ namespace RaidMode
         {
             if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.NoScaling || RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.JustVanilla)
                 return true;
-            if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.Custom && RaidModeConfig.LiveSettings.SlowdownScaling)
+            if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.Custom && !RaidModeConfig.LiveSettings.SlowdownScaling)
                 return true;
             int manualPlayerCount = RaidModeConfig.LiveSettings.ManualDifficultyScaling;
-            int playerCount = manualPlayerCount > 0 ? manualPlayerCount : Global.Lobby.PlayersInLobbyCount;
+            int lobbyPlayerCount = Global.Lobby != null ? Global.Lobby.PlayersInLobbyCount : 1;
+            int playerCount = manualPlayerCount > 0 ? manualPlayerCount : lobbyPlayerCount;
             if (playerCount == 0)
                 return true;
             if (__instance.Faction != Character.Factions.Player)
@@ -37,7 +38,7 @@ namespace RaidMode
     {
         public static bool Prefix (Character __instance, PlayerSaveData _resurrectState, bool _playAnim)
         {
-            if (_resurrectState != null && _playAnim)
+            if (_resurrectState != null && _playAnim && __instance.IsPhotonPlayerLocal)
             {
                 _resurrectState.BurntHealth -= __instance.ActiveMaxHealth * 0.5f;
                 float hpBurn = __instance.ActiveMaxHealth * (RaidModeConfig.LiveSettings.RevivalHealthBurn / 100f);
@@ -54,7 +55,11 @@ namespace RaidMode
     {
         public static void Postfix (Character __instance, bool _down)
         {
-            if (RaidModeConfig.LiveSettings.StabilityRework && _down && !__instance.Dodging)
+            if (__instance != null
+                && RaidModeConfig.LiveSettings.StabilityRework
+                && _down
+                && !__instance.Dodging
+                && __instance.StatusEffectMngr != null)
             {
                 __instance.StatusEffectMngr.CleanseStatusEffect("Confusion");
             }
@@ -68,6 +73,10 @@ namespace RaidMode
         {
             if (!RaidModeConfig.LiveSettings.StabilityRework)
                 return true;
+            if ((int)__instance.PlayerType != 0 && CharacterManager.Instance != null
+                && (CharacterManager.Instance.IsSleepPending || CharacterManager.Instance.IsStartRestSent))
+                return false;
+
             //Record previous stability to know if passed breakpoints.
             float prevStability = __instance.m_stability;
             float num = _knockValue;

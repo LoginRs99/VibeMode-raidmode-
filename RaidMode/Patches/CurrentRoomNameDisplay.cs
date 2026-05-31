@@ -9,7 +9,7 @@ namespace RaidMode
         {
             if (RaidModeConfig.LiveSettings.HideRoomName)
                 __instance.m_lblRoomName.text = "-";
-            else
+            else if (PhotonNetwork.room != null)
                 __instance.m_lblRoomName.text = PhotonNetwork.room.Name;
         }
     }
