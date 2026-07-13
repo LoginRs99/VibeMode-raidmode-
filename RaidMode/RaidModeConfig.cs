@@ -105,7 +105,7 @@ namespace RaidMode
             var view = obj.AddComponent<PhotonView>();
             view.viewID = VIEW_ID;
             #region Base Section
-            string section0 = "";
+            string section0 = "General";
             Language = config.Bind(section0, "Language", LanguageSetting.English,
                 "Client-local UI language for VibeMode notifications. This setting is not synced by the host.\nKliens oldali VibeMode nyelv az ertesitesekhez. Ezt a beallitast a host nem szinkronizalja.");
             HideRoomName = config.Bind(section0, "Hide Room Name", false,
