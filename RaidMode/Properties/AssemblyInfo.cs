@@ -3,11 +3,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Vibecode")]
+[assembly: AssemblyTitle("VibeMode")]
 [assembly: AssemblyDescription("LoginRs-maintained fork of Raid Mode for Outward Definitive Edition, with multiplayer sync fixes.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("LoginRs; original Raid Mode by SpicerXD")]
-[assembly: AssemblyProduct("Vibecode")]
+[assembly: AssemblyProduct("VibeMode")]
 [assembly: AssemblyCopyright("Fork maintained by LoginRs. Original Raid Mode by SpicerXD.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

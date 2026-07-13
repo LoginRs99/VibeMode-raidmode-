@@ -1,4 +1,4 @@
-# Vibecode Development & Build Guide
+# VibeMode Development & Build Guide
 
 If a future update to Outward is released, you will need to recompile the mod to ensure compatibility. This guide explains how to set up the development environment from a fresh `git clone`.
 
@@ -34,7 +34,7 @@ This will automatically restore the `Microsoft.NETFramework.ReferenceAssemblies`
 
 ## 3. Packaging
 After a successful build:
-1. The new `Vibecode.dll` will be generated in `RaidMode/bin/Debug/`.
+1. The new `VibeMode.dll` will be generated in `RaidMode/bin/Debug/`.
 2. Copy it into the `dist/` folder, replacing the old one.
-3. Compress the contents of the `dist/` folder (including `manifest.json`, `icon.png`, and `README.md`) into a `Vibecode.zip` archive.
+3. Compress the contents of the `dist/` folder (including `manifest.json`, `icon.png`, and `README.md`) into a `VibeMode.zip` archive.
 4. Upload to Thunderstore.

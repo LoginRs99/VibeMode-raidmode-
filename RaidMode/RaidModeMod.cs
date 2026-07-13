@@ -4,7 +4,7 @@ using System.Collections;
 using UnityEngine;
 namespace RaidMode
 {
-    [BepInPlugin("com.loginrs.vibemode", "Vibecode", "5.0.3")]
+    [BepInPlugin("com.loginrs.vibemode", "VibeMode", "5.0.3")]
     public class RaidModeMod : BaseUnityPlugin
     {
         internal static RaidModeMod Instance;
@@ -41,7 +41,7 @@ namespace RaidMode
             harmony.PatchAll();
             NetworkLevelLoader_Patch.Init();
             RaidModeConfig.Init(Config);
-            Debug.Log("Vibecode: 5.0.3 loaded! Maintained by LoginRs. Forked from Raid Mode by SpicerXD.");
+            Debug.Log("VibeMode: 5.0.3 loaded! Maintained by LoginRs. Forked from Raid Mode by SpicerXD.");
         }
 
         internal IEnumerator CheckViewIDCollisionsAfterJoin ()
