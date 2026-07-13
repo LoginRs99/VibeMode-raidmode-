@@ -28,6 +28,23 @@ The host/master client is authoritative. In online co-op, the host's Vibecode se
 
 Client-specific visual preferences are currently not separate. Nameplates, debug logging, travel readiness messages, and gameplay settings are all synced from the host.
 
+## Multiplayer Connectivity & Desync Prevention
+
+**How to Host & Connect:**
+1. The Host opens their game to multiplayer exactly like the vanilla game. No special configuration is needed.
+2. Ensure the Host has the `Party Limit` configuration adjusted in the BepInEx `Vibecode.cfg` file to support your group size before opening the lobby.
+3. Friends can join using the standard Find Match/Lobby system or by typing in the exact lobby name.
+
+**Port Forwarding & Networking:**
+Outward uses Photon Unity Networking (PUN) which connects players via cloud servers. Because of this, **no port-forwarding is required**. As long as everyone has a stable internet connection, you can play together across the internet immediately.
+
+**Managing Desyncs (4-6 Players):**
+The vanilla game was hard-coded for 2 players, meaning a 4-6 player lobby pushes the game's engine to its limits. While Vibecode fixes many internal network desyncs related to combat and questing, you should follow these best practices for a smooth playthrough:
+* **The Host should lead:** Have the Host trigger region transitions, interact with main story NPCs, and perform large inventory sorts.
+* **Avoid flooding the network:** 6 players dropping items or looting the same body at the exact same moment can cause packet loss. Try to stagger interactions when looting large chests.
+* **If a desync happens:** You may occasionally encounter invisible items, enemies acting strangely, or someone getting stuck during a loading screen. If this occurs, simply have the desynced player disconnect and reconnect to the lobby. The Host does not need to restart.
+
+
 ## Important Options
 
 - `Party Limit`: Host-only. Sets the maximum online room size.
