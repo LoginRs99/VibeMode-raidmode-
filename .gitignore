@@ -10,3 +10,7 @@ extract_raidmode.py
 raidmode_analysis.txt
 release_package/
 VibeMode-*.zip
+
+Others/
+*.zip
+

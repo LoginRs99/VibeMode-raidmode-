@@ -33,22 +33,5 @@ namespace RaidMode
             return false;
         }
     }
-
-    [HarmonyPatch(typeof(Character), "SendPerformSpellCastTrivial", new Type[] { typeof(int), typeof(string), typeof(int), typeof(int), typeof(float) })]
-    public class Character_SendPerformSpellCastTrivial
-    {
-        public static bool Prefix (string __1)
-        {
-            return VibeModeNetwork.HasRemotePeers || !string.IsNullOrEmpty(__1);
-        }
-    }
-
-    [HarmonyPatch(typeof(Character), "SendPerformSpellCastItem", new Type[] { typeof(int), typeof(string), typeof(int), typeof(int), typeof(float) })]
-    public class Character_SendPerformSpellCastItem
-    {
-        public static bool Prefix (string __1)
-        {
-            return VibeModeNetwork.HasRemotePeers || !string.IsNullOrEmpty(__1);
-        }
-    }
 }
+

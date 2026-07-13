@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 namespace RaidMode
 {
     //Implments the rest of the area switching restrictions for No Man Left Behind
@@ -7,6 +7,9 @@ namespace RaidMode
     {
         public static bool Prefix (InteractionSwitchArea __instance)
         {
+            if (__instance == null || __instance.LastCharacter == null)
+                return true;
+
             if (RaidModeConfig.LiveSettings.ReviveNoManLeftBehind)
             {
                 //Block area switching if a player is dead.

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HarmonyLib;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -10,10 +10,13 @@ namespace RaidMode
     {
         public static bool Prefix (RoomCreationPanel __instance)
         {
-            if (RaidModeConfig.LiveSettings.HideRoomName)
-                __instance.m_txtRoomName.inputType = InputField.InputType.Password;
-            else
-                __instance.m_txtRoomName.inputType = InputField.InputType.Standard;
+            if (__instance != null && __instance.m_txtRoomName != null)
+            {
+                if (RaidModeConfig.LiveSettings.HideRoomName)
+                    __instance.m_txtRoomName.inputType = InputField.InputType.Password;
+                else
+                    __instance.m_txtRoomName.inputType = InputField.InputType.Standard;
+            }
             return true;
         }
     }

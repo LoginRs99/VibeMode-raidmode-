@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 namespace RaidMode
 {
     //Implments the restrictions and costs for reviving players with the No Man Left Behind .
@@ -7,7 +7,7 @@ namespace RaidMode
     {
         public static bool Prefix (InteractionBase __instance)
         {
-            if (Global.CombatManager == null)
+            if (Global.CombatManager == null || __instance == null || __instance.LastCharacter == null)
                 return true;
 
             //Block reviving if the reviver is in combat.

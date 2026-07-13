@@ -1,0 +1,9 @@
+{
+    "name": "Vibecode",
+    "version_number": "5.0.3",
+    "website_url": "https://github.com/LoginRs99/VibeMode-raidmode-",
+    "description": "Outward Definitive Edition co-op mod forked from Raid Mode. Raises the online party limit and adds stability fixes/options for larger co-op groups.",
+    "dependencies": [
+        "bbepis-BepInExPack-5.4.19"
+    ]
+}

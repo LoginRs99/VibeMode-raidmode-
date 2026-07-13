@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HarmonyLib;
 using UnityEngine;
 namespace RaidMode
@@ -71,7 +71,7 @@ namespace RaidMode
     {
         public static bool Prefix (Character __instance, float _knockValue, float _angle, bool _block, Character _dealerChar)
         {
-            if (!RaidModeConfig.LiveSettings.StabilityRework)
+            if (!RaidModeConfig.LiveSettings.StabilityRework || __instance == null)
                 return true;
             if ((int)__instance.PlayerType != 0 && CharacterManager.Instance != null
                 && (CharacterManager.Instance.IsSleepPending || CharacterManager.Instance.IsStartRestSent))
@@ -90,7 +90,7 @@ namespace RaidMode
             }
             if (!__instance.m_impactImmune && num > 0f && !__instance.m_pendingDeath)
             {
-                if (__instance.Stats.CurrentStamina < 1f)
+                if (__instance.Stats != null && __instance.Stats.CurrentStamina < 1f)
                 {
                     float num2 = __instance.m_shieldStability + __instance.m_stability - 49f;
                     if (num < num2)
@@ -115,10 +115,15 @@ namespace RaidMode
                 {
                     __instance.m_stability = Mathf.Clamp(__instance.m_stability - num, 0f, 100f);
                 }
+
+                bool instanceIsMine = __instance.photonView != null && __instance.photonView.isMine;
+                bool dealerIsMine = _dealerChar == null || (_dealerChar.photonView != null && _dealerChar.photonView.isMine);
+                bool shouldSendRPC = (!__instance.IsAI && instanceIsMine) || (__instance.IsAI && dealerIsMine);
+
                 //No more knockback count.
                 if (__instance.m_stability <= 0f)
                 {
-                    if ((!__instance.IsAI && __instance.photonView.isMine) || (__instance.IsAI && (_dealerChar == null || _dealerChar.photonView.isMine)))
+                    if (shouldSendRPC && __instance.photonView != null)
                     {
                         __instance.photonView.RPC("SendKnock", PhotonTargets.All, true, __instance.m_stability);
                     }
@@ -137,7 +142,7 @@ namespace RaidMode
                 {
                     if (prevStability > 50f && __instance.m_knockbackCount == 0)
                     {
-                        if ((!__instance.IsAI && __instance.photonView.isMine) || (__instance.IsAI && (_dealerChar == null || _dealerChar.photonView.isMine)))
+                        if (shouldSendRPC && __instance.photonView != null)
                         {
                             __instance.photonView.RPC("SendKnock", PhotonTargets.All, false, __instance.m_stability);
                         }
@@ -148,7 +153,7 @@ namespace RaidMode
                     }
                     else if (__instance.m_stability <= 33f && prevStability > 33f && __instance.m_knockbackCount <= 1)
                     {
-                        if ((!__instance.IsAI && __instance.photonView.isMine) || (__instance.IsAI && (_dealerChar == null || _dealerChar.photonView.isMine)))
+                        if (shouldSendRPC && __instance.photonView != null)
                         {
                             __instance.photonView.RPC("SendKnock", PhotonTargets.All, false, __instance.m_stability);
                         }
@@ -159,7 +164,7 @@ namespace RaidMode
                     }
                     else if (__instance.m_stability <= 16f && prevStability > 16f && __instance.m_knockbackCount <= 2)
                     {
-                        if ((!__instance.IsAI && __instance.photonView.isMine) || (__instance.IsAI && (_dealerChar == null || _dealerChar.photonView.isMine)))
+                        if (shouldSendRPC && __instance.photonView != null)
                         {
                             __instance.photonView.RPC("SendKnock", PhotonTargets.All, false, __instance.m_stability);
                         }

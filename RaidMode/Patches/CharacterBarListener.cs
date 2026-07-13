@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 namespace RaidMode
 {
     //Adds a nameplate to the hp bar for other players and keeps them visible.
@@ -7,7 +7,7 @@ namespace RaidMode
     {
         public static void Postfix (CharacterBarListener __instance)
         {
-            if (__instance.TargetCharacter && __instance.TargetCharacter.OwnerPlayerSys && __instance.TargetCharacter != __instance.CharacterUI.TargetCharacter && __instance.m_healthBar && __instance.m_healthBar.m_lblValue)
+            if (__instance.TargetCharacter && __instance.TargetCharacter.OwnerPlayerSys && __instance.CharacterUI != null && __instance.TargetCharacter != __instance.CharacterUI.TargetCharacter && __instance.m_healthBar && __instance.m_healthBar.m_lblValue)
             {
                 __instance.m_healthBar.HideIfFull = !RaidModeConfig.LiveSettings.ShowNameplates;
                 __instance.m_healthBar.m_lblValue.gameObject.SetActive(RaidModeConfig.LiveSettings.ShowNameplates || MenuManager.Instance && MenuManager.Instance.DisplayDebugInfo);
@@ -23,7 +23,7 @@ namespace RaidMode
     {
         public static void Postfix (CharacterBarListener __instance)
         {
-            if (__instance.TargetCharacter && __instance.TargetCharacter.OwnerPlayerSys && __instance.TargetCharacter != __instance.CharacterUI.TargetCharacter && __instance.LocalCharacter && __instance.LocalCharacter.IsStartInitDone && __instance.m_targetCharacterBarManager && __instance.LocalCharacter.CharacterCamera && __instance.LocalCharacter.CharacterCamera.CameraScript)
+            if (__instance.TargetCharacter && __instance.TargetCharacter.OwnerPlayerSys && __instance.CharacterUI != null && __instance.TargetCharacter != __instance.CharacterUI.TargetCharacter && __instance.LocalCharacter && __instance.LocalCharacter.IsStartInitDone && __instance.m_targetCharacterBarManager && __instance.LocalCharacter.CharacterCamera && __instance.LocalCharacter.CharacterCamera.CameraScript)
             {
                 __instance.m_targetCharacterBarManager.DisplayDistance = 100000f;
                 if (RaidModeConfig.LiveSettings.ShowNameplates && RaidModeConfig.LiveSettings.ShowNameplatesGlobally)

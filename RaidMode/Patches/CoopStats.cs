@@ -19,9 +19,9 @@ namespace RaidMode
         private const string TAG_IMPACT = "95";
         private const string TAG_ALL_DAMAGES = "96";
 
-        public static bool Prefix (Character _char)
+        public static bool Prefix (CoopStats __instance, Character _char)
         {
-            if (!_char || _char.Stats == null)
+            if (!_char || _char.Stats == null || __instance == null)
                 return false;
 
             CharacterStats stats = _char.Stats;
@@ -45,7 +45,7 @@ namespace RaidMode
                 return false;
             if (RaidModeConfig.LiveSettings.DifficultyMode == RaidModeConfig.DifficultyModeSetting.VanillaPlus)
             {
-                VanillaPlus(_char, playerCount, stats.CoopStats.StatData);
+                VanillaPlus(_char, playerCount, __instance.StatData);
                 return false;
             }
             float healthMult = 0.5f;
@@ -89,7 +89,7 @@ namespace RaidMode
                 float delta = newEffectiveAmt - effectiveAmt;
                 float modifiedAmt = delta * stabilityMult * mult + effectiveAmt;
                 float newResMod = 1f / modifiedAmt;
-                impactResBonus = (1f - newResMod) * 100f - baseImpactRes + 0.25f;
+                impactResBonus = (1f - newResMod) * 100f - baseImpactRes + 25f;
             }
             StatStack impactResStack = new StatStack("Coop_Stat", -1f, impactResBonus);
             stats.AddStatStack(TagSourceManager.Instance.GetTag(TAG_IMPACT_RESISTANCE), impactResStack, false);

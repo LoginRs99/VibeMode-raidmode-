@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
 namespace RaidMode
@@ -18,7 +18,7 @@ namespace RaidMode
             {
                 bool canUseSplitButton = __instance.LocalCharacter.Alive
                                          && (PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient);
-                if (__instance.m_btnSplit.interactable != canUseSplitButton)
+                if (__instance.m_btnSplit != null && __instance.m_btnSplit.interactable != canUseSplitButton)
                     __instance.m_btnSplit.interactable = canUseSplitButton;
 
                 if (!__instance.m_suicide && ((Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.U)) || ControlsInput.GamepadUnstuckCheat(__instance.PlayerID)))
@@ -40,10 +40,16 @@ namespace RaidMode
     {
         public static void Postfix (PauseMenu __instance)
         {
-            __instance.m_btnSplit.interactable = __instance.LocalCharacter
-                                                 && __instance.LocalCharacter.Alive
-                                                 && (PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient);
-            __instance.m_btnToggleNetwork.interactable = StoreManager.Instance.AllowOnlineFeatures && !ConnectPhotonMaster.Instance.RequestingRooms;
+            if (__instance.m_btnSplit != null)
+            {
+                __instance.m_btnSplit.interactable = __instance.LocalCharacter
+                                                     && __instance.LocalCharacter.Alive
+                                                     && (PhotonNetwork.offlineMode || PhotonNetwork.isMasterClient);
+            }
+            if (__instance.m_btnToggleNetwork != null)
+            {
+                __instance.m_btnToggleNetwork.interactable = StoreManager.Instance.AllowOnlineFeatures && !ConnectPhotonMaster.Instance.RequestingRooms;
+            }
         }
     }
     [HarmonyPatch(typeof(PauseMenu), "OnToggleNetwork")]
@@ -53,7 +59,10 @@ namespace RaidMode
         {
             if (PhotonNetwork.offlineMode)
             {
-                __instance.m_gameNamingWindow.Show(LocalizationManager.Instance.GetLoc("MessageBox_Online_RoomNameCreate"), __instance.OnConfirmRoomCreation);
+                if (__instance.m_gameNamingWindow != null)
+                {
+                    __instance.m_gameNamingWindow.Show(LocalizationManager.Instance.GetLoc("MessageBox_Online_RoomNameCreate"), __instance.OnConfirmRoomCreation);
+                }
                 return false;
             }
             return true;
