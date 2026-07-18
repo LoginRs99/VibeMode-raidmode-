@@ -17,8 +17,7 @@ namespace RaidMode
                 RaidModeConfig.DebugLog($"Revive blocked: reviver in combat. reviver={__instance.LastCharacter.Name}");
                 if (__instance.LastCharacter.IsLocalPlayer)
                 {
-                    __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("Must be out of combat to revive a teammate!",
-                                                                                                  "Harc kozben nem tudsz csapattarsat eleszteni!"));
+                    __instance.LastCharacter.CharacterUI.ShowInfoNotification("Must be out of combat to revive a teammate!");
                 }
                 __instance.InterruptActivation();
                 return false;
@@ -30,8 +29,7 @@ namespace RaidMode
                 RaidModeConfig.DebugLog($"Revive blocked: party in combat. reviver={__instance.LastCharacter.Name}, playersInCombat={Global.CombatManager.PlayersInCombat.Count}");
                 if (__instance.LastCharacter.IsLocalPlayer)
                 {
-                    __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("The party must be out of combat to revive a teammate!",
-                                                                                                  "A csapatnak ki kell kerulnie a harcbol az eleszteshez!"));
+                    __instance.LastCharacter.CharacterUI.ShowInfoNotification("The party must be out of combat to revive a teammate!");
                 }
                 __instance.InterruptActivation();
                 return false;
@@ -46,8 +44,7 @@ namespace RaidMode
                     RaidModeConfig.DebugLog($"Revive blocked: missing healing item. reviver={__instance.LastCharacter.Name}");
                     if (__instance.LastCharacter.IsLocalPlayer)
                     {
-                        __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("A healing item is required to revive a teammate.",
-                                                                                                      "Gyogyito targy szukseges a csapattars elesztesehez."));
+                        __instance.LastCharacter.CharacterUI.ShowInfoNotification("A healing item is required to revive a teammate.");
                     }
                     __instance.InterruptActivation();
                     return false;
@@ -63,8 +60,7 @@ namespace RaidMode
                         }
                         if (__instance.LastCharacter.IsLocalPlayer)
                         {
-                            __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("Used a Bandage to revive teammate.",
-                                                                                                          "Bandazs felhasznalva a csapattars elesztesehez."));
+                            __instance.LastCharacter.CharacterUI.ShowInfoNotification("Used a Bandage to revive teammate.");
                         }
                     }
                     else if (__instance.LastCharacter.Inventory.OwnsItem(4300010)) //Or use a life potion.
@@ -76,8 +72,7 @@ namespace RaidMode
                         }
                         if (__instance.LastCharacter.IsLocalPlayer)
                         {
-                            __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("Used a Life Potion to revive teammate.",
-                                                                                                          "Eletital felhasznalva a csapattars elesztesehez."));
+                            __instance.LastCharacter.CharacterUI.ShowInfoNotification("Used a Life Potion to revive teammate.");
                         }
                     }
                     else //Or finally, use a great life potion.
@@ -89,8 +84,7 @@ namespace RaidMode
                         }
                         if (__instance.LastCharacter.IsLocalPlayer)
                         {
-                            __instance.LastCharacter.CharacterUI.ShowInfoNotification(RaidModeConfig.Text("Used a Great Life Potion to revive teammate.",
-                                                                                                          "Nagy eletital felhasznalva a csapattars elesztesehez."));
+                            __instance.LastCharacter.CharacterUI.ShowInfoNotification("Used a Great Life Potion to revive teammate.");
                         }
                     }
                 }

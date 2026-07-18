@@ -48,8 +48,15 @@ VibeMode uses a host-authoritative model for settings. Clients can read configur
 | **BUG 4** | `RaidModeConfig.cs` | **Enum Unboxing Crash:** Described in Section 2. Enums transferred over PUN must be cast from `object` to `int` before converting to the enum type. |
 | **BUG 5** | `RaidModeConfig.cs` | **RPC Flooding:** Described in Section 2. Reset sync flags (`settingsChanged`, `updateChars`) *before* calling `photonView.RPC` to prevent sending frames of redundant packets. |
 | **BUG 7** | `GiveReward.cs` | **Reward Sharing Failure:** An early exit checking for "Everyone" was preventing remote players from getting shared loot. Ensure the reward sharing hook evaluates correctly for non-local split-screen players. |
+| **BUG 8** | `ItemManager.cs` | **Sequential Sync Lag:** Yielding a frame inside a nested player loop (sending chunks to player A, yielding, then player B, yielding) causes massive sync delays for players later in the list. Broadcast each chunk to all players first, *then* yield. |
+| **BUG 9** | `RepairEquipmentNodeAction.cs` | **Unverified Durability Replication:** Do not attempt client-to-host RPC syncing for blacksmith repairs without verifying how `Inventory.RepairEverything()` propagates durability. Unverified assumptions lead to desyncs. |
 
 ---
+
+## 3.5 Development Standards (Anti-Defensive Noise)
+*   **No Defensive Null-Checking:** Do not add `photonView != null` or `m_animator != null` guards to clean code paths unless there is verified runtime evidence of an NRE.
+*   **Verify Networking Flows:** Never assume a local method (like restoring durability or applying a knock) automatically replicates over the network. Always verify the synchronization flow in the base game assembly first.
+
 
 ## 4. Dependencies & Compilation
 

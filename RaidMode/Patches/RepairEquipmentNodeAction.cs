@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using NodeCanvas.Tasks.Actions;
 namespace RaidMode
 {
@@ -15,9 +15,9 @@ namespace RaidMode
             if (PhotonNetwork.inRoom && !PhotonNetwork.isMasterClient)
                 return true;
 
-            for (int i = 0; i < CharacterManager.Instance.PlayerCharacters.Count; i++)
+            foreach (string uid in CharacterManager.Instance.PlayerCharacters.Values)
             {
-                Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[i]);
+                Character character = CharacterManager.Instance.GetCharacter(uid);
                 if (character && character.Inventory)
                     character.Inventory.RepairEverything();
             }

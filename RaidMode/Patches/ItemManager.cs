@@ -70,25 +70,39 @@ namespace RaidMode
             if (!VibeModeNetwork.HasRemotePeers || chunks == null || chunks.Count == 0 || PhotonNetwork.playerList == null)
                 return;
 
+            if (RaidModeMod.Instance != null)
+            {
+                RaidModeMod.Instance.StartCoroutine(SendChunksCoroutine(itemManager, rpcName, charUID, chunks));
+            }
+        }
+
+        private static System.Collections.IEnumerator SendChunksCoroutine (ItemManager itemManager, string rpcName, string charUID, List<string> chunks)
+        {
             PhotonPlayer localPlayer = PhotonNetwork.player;
             PhotonPlayer masterPlayer = PhotonNetwork.masterClient;
-            int recipients = 0;
 
+            List<PhotonPlayer> validPeers = new List<PhotonPlayer>();
             foreach (PhotonPlayer player in PhotonNetwork.playerList)
             {
-                if (player == null || localPlayer != null && player.ID == localPlayer.ID)
-                    continue;
-                if (masterPlayer != null && player.ID == masterPlayer.ID)
-                    continue;
-
-                recipients++;
-                for (int i = 0; i < chunks.Count; i++)
+                if (player != null && (localPlayer == null || player.ID != localPlayer.ID) && (masterPlayer == null || player.ID != masterPlayer.ID))
                 {
-                    itemManager.photonView.RPC(rpcName, player, charUID, chunks[i], i, chunks.Count);
+                    validPeers.Add(player);
                 }
             }
 
-            RaidModeConfig.DebugLog($"Sent {rpcName} to {recipients} non-master peers. char={charUID}, chunks={chunks.Count}");
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                if (itemManager == null || itemManager.photonView == null)
+                    yield break;
+
+                foreach (PhotonPlayer player in validPeers)
+                {
+                    itemManager.photonView.RPC(rpcName, player, charUID, chunks[i], i, chunks.Count);
+                }
+                yield return null;
+            }
+
+            RaidModeConfig.DebugLog($"Sent {rpcName} to {validPeers.Count} non-master peers via coroutine. char={charUID}, chunks={chunks.Count}");
         }
     }
 }
