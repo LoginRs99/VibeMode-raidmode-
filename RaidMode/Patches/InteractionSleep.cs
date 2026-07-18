@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 namespace RaidMode
 {
     //Implments the Cozy Beds feature here too so it shows on the interaction text.
@@ -7,6 +7,8 @@ namespace RaidMode
     {
         public static bool Prefix (InteractionSleep __instance)
         {
+            if (__instance.m_sleepableScript == null)
+                return true;
             if (RaidModeConfig.LiveSettings.CozyBeds && __instance.m_sleepableScript.IsInnsBed)
             {
                 __instance.m_sleepableScript.Capacity = 2;

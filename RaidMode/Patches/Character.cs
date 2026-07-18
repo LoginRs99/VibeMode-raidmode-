@@ -16,7 +16,7 @@ namespace RaidMode
                 return true;
             int manualPlayerCount = RaidModeConfig.LiveSettings.ManualDifficultyScaling;
             int lobbyPlayerCount = Global.Lobby != null ? Global.Lobby.PlayersInLobbyCount : 1;
-            int playerCount = manualPlayerCount > 0 ? manualPlayerCount : lobbyPlayerCount;
+            int playerCount = manualPlayerCount > 0 ? manualPlayerCount + 1 : lobbyPlayerCount;
             if (playerCount == 0)
                 return true;
             if (__instance.Faction != Character.Factions.Player)

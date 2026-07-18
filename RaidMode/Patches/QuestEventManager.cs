@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HarmonyLib;
 using UnityEngine;
 namespace RaidMode
@@ -9,6 +9,12 @@ namespace RaidMode
     {
         public static bool Prefix (QuestEventManager __instance, string _eventUID, int _stackAmount, bool _sendEvent, ref bool __result)
         {
+            if (string.IsNullOrEmpty(_eventUID))
+            {
+                Debug.LogError("Tryied to add event but received empty UID");
+                __result = false;
+                return false;
+            }
             QuestEventData questEventData;
             if (!QuestEventManager.m_questEvents.TryGetValue(_eventUID, out questEventData))
             {
